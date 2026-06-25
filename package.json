@@ -1,0 +1,12 @@
+{
+  "name": "devsecops-sample-app",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "jest --runInBand --forceExit --reporters=default --reporters=jest-junit"
+  },
+  "jest-junit": {
+    "outputDirectory": ".",
+    "outputName": "junit-report.xml"
+  }
+}
