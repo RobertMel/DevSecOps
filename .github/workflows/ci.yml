@@ -1,26 +1,50 @@
 name: "Application Pipeline"
 
+# 1. DÉCLENCHEURS AVANCÉS
 on:
   push:
+  workflow_dispatch: # Déclencheur manuel
+    inputs:
+      target_sub_env:
+        description: 'Sous-environnement cible (ex: sandbox)'
+        required: false
+        type: string
+  schedule: # Déclencheur planifié (toutes les nuits à minuit UTC)
+    - cron: '0 0 * * *'
+
+# 2. GESTION DE LA CONCURRENCE
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+# 3. DURCISSEMENT DES PRIVILÈGES (Principe du moindre privilège)
+permissions:
+  contents: read           # Droit de cloner le code
+  checks: write            # Droit de publier le rapport JUnit
+  security-events: write   # Droit d'écrire les alertes de sécurité CodeQL
+  actions: read            # Nécessaire pour CodeQL
 
 jobs:
-  validate-code:
+  # --- JOB 1 : VALIDATION TECHNIQUE ET SÉCURITÉ ---
+  build-and-test:
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      checks: write
-
+    timeout-minutes: 10 # Verrou temporel de sécurité
+    
     steps:
       - name: "Clonage du code source"
         uses: actions/checkout@v4
+
+      # Initialisation du scanner SAST CodeQL
+      - name: "Initialisation de CodeQL"
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript
 
       - name: "Configuration de Node.js"
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      # 1. OPTIMISATION : Mise en cache des dépendances
       - name: "Cache des modules npm"
         uses: actions/cache@v4
         with:
@@ -29,7 +53,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
 
-      # 2. LISIBILITÉ : Groupement des logs d'installation
       - name: "Installation des dépendances"
         run: |
           echo "::group::Installation des modules Node.js"
@@ -39,19 +62,24 @@ jobs:
       - name: "Exécution de la suite de tests"
         run: npm test
 
-      # 3. RAPPORTS GRAPHIQUES : Publication systématique
       - name: "Publication du rapport de tests"
         uses: mikepenz/action-junit-report@v4
-        if: always() # Exécuté même si l'étape précédente (npm test) échoue
+        if: always()
         with:
           report_paths: '**/junit-report.xml'
+          
+      # Analyse statique (SAST) du code applicatif
+      - name: "Analyse des vulnérabilités (CodeQL)"
+        uses: github/codeql-action/analyze@v3
 
-      # 4. SÉCURITÉ : Test de masquage des secrets
-      - name: "Injection et test de masquage des secrets"
-        env:
-          ENV_VAR: ${{ vars.APP_ENVIRONMENT }}
-          SECRET_VAR: ${{ secrets.AWS_SECRET_KEY }}
+  # --- JOB 2 : DÉPLOIEMENT ---
+  deploy-staging-prod:
+    needs: build-and-test # Dépendance stricte au succès du Job 1
+    runs-on: ubuntu-latest
+    environment: production # Liaison à un environnement protégé
+    
+    steps:
+      - name: "Simulation de déploiement en production"
         run: |
-          echo "Environnement cible : $ENV_VAR"
-          echo "Clé secrète injectée : $SECRET_VAR"
-
+          echo "🚀 Déploiement en cours sur l'environnement de production..."
+          echo "Paramètre manuel (si fourni) : ${{ github.event.inputs.target_sub_env }}"
