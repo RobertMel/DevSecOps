@@ -6,6 +6,11 @@ on:
 jobs:
   validate-code:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      checks: write
+
     steps:
       - name: "Clonage du code source"
         uses: actions/checkout@v4
