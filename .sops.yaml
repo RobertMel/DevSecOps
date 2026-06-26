@@ -1,0 +1,13 @@
+creation_rules:
+  # Les secrets de Dev peuvent être lus par le Dev ET par l'Ops
+  - path_regex: secrets-dev\.yaml$
+    key_groups:
+      - age:
+        - age1ykwdsav72mhy2cp5267axqsnqrd20hhrju5cs30auxe9jdhu4ekqa27j5r
+        - age16qdmmx8xdh6hlc2mzdh5vxzpsl3egjnq3d8uxx8vlfpq95hjy50qm3etsp
+        
+  # Les secrets de Prod ne peuvent être lus QUE par l'Ops (la CI/CD)
+  - path_regex: secrets-prod\.yaml$
+    key_groups:
+      - age:
+        - age16qdmmx8xdh6hlc2mzdh5vxzpsl3egjnq3d8uxx8vlfpq95hjy50qm3etsp

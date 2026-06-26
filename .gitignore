@@ -1,3 +1,7 @@
 node_modules/
 npm-debug.log
 .env
+
+# Clés cryptographiques locales
+dev.txt
+ops.txt
