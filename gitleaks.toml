@@ -1,0 +1,11 @@
+title = "Configuration Gitleaks"
+
+# On force Gitleaks à conserver ses règles de base (AWS, Entropie, etc.)
+[extend]
+useDefault = true
+
+[[rules]]
+id = "corporate-api-token"
+description = "Jeton d'API interne Corporate"
+# On cherche entre 20 et 30 caractères pour être plus souple
+regex = '''(?i)mycorp_[a-z0-9]{20,30}'''
